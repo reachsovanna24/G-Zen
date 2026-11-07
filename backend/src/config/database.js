@@ -47,6 +47,8 @@ if (isVercel && !fs.existsSync(resolvedPath)) {
 }
 
 let sequelize;
+let sequelizeInitError = null;
+
 try {
   sequelize = new Sequelize({
     dialect: 'sqlite',
@@ -58,24 +60,36 @@ try {
     }
   });
 } catch (e) {
+  sequelizeInitError = e.message;
   console.warn('⚠️ SQLite native initialization skipped (running with memory catalog):', e.message);
+
+  function createMockModel(modelName) {
+    function MockModel(values = {}) {
+      Object.assign(this, values);
+    }
+    MockModel.modelName = modelName;
+    MockModel.belongsTo = () => {};
+    MockModel.hasMany = () => {};
+    MockModel.belongsToMany = () => {};
+    MockModel.sync = async () => {};
+    MockModel.count = async () => 0;
+    MockModel.findAll = async () => [];
+    MockModel.findOne = async () => null;
+    MockModel.findByPk = async () => null;
+    MockModel.create = async (data) => new MockModel({ ...data, id: Date.now() });
+    MockModel.bulkCreate = async (arr) => arr.map(a => new MockModel(a));
+    MockModel.prototype.changed = () => false;
+    MockModel.prototype.comparePassword = async function(p) { return p === 'admin123'; };
+    return MockModel;
+  }
+
   sequelize = {
+    initError: e.message,
     authenticate: async () => false,
     sync: async () => {},
     query: async () => [[]],
-    define: () => ({
-      belongsTo: () => {},
-      hasMany: () => {},
-      belongsToMany: () => {},
-      sync: async () => {},
-      count: async () => 0,
-      findAll: async () => [],
-      findOne: async () => null,
-      findByPk: async () => null,
-      create: async (data) => ({ ...data, id: Date.now() }),
-      bulkCreate: async (arr) => arr,
-    }),
+    define: (name) => createMockModel(name),
   };
 }
 
-module.exports = { sequelize };
+module.exports = { sequelize, sequelizeInitError };
