@@ -41,9 +41,45 @@ app.use('/uploads', express.static(uploadsDir));
 
 // Vercel serverless route compatibility middleware
 app.use((req, res, next) => {
-  if (!req.url.startsWith('/api') && !req.url.startsWith('/uploads')) {
+  const vercelPath = req.headers['x-matched-path'] || req.headers['x-forwarded-uri'];
+  if (vercelPath && (vercelPath.startsWith('/api') || vercelPath.startsWith('/uploads'))) {
+    req.url = vercelPath;
+  } else if (!req.url.startsWith('/api') && !req.url.startsWith('/uploads')) {
     req.url = '/api' + req.url;
   }
+  next();
+});
+
+// Lazy serverless database synchronization
+let isInitialized = false;
+let initPromise = null;
+
+const ensureInit = async () => {
+  if (isInitialized) return;
+  if (!initPromise) {
+    initPromise = (async () => {
+      try {
+        if (sequelize && typeof sequelize.authenticate === 'function') {
+          await sequelize.authenticate();
+          await sequelize.sync();
+          await ensureSchema();
+          await seedDatabase();
+          console.log('✅ SQLite Database ready and synchronized.');
+        }
+      } catch (err) {
+        console.warn('⚠️ SQLite init warning (resilient memory fallback active):', err.message);
+      } finally {
+        isInitialized = true;
+      }
+    })();
+  }
+  await initPromise;
+};
+
+app.use(async (req, res, next) => {
+  try {
+    await ensureInit();
+  } catch (e) {}
   next();
 });
 
@@ -51,6 +87,16 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
+});
+
+// Base API endpoint
+app.get('/api', (req, res) => {
+  res.status(200).json({
+    status: 'online',
+    app: 'G-Zen Phone Store API (Phnom Penh)',
+    version: '1.0.0',
+    time: new Date().toISOString(),
+  });
 });
 
 // API Routes
@@ -62,7 +108,6 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/bakong', bakongRoutes);
 app.use('/api/supabase', supabaseRoutes);
 app.use('/api/upload', uploadRoutes);
-
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -91,14 +136,7 @@ app.use((err, req, res, next) => {
 // Start Server and Sync Database
 const startServer = async () => {
   try {
-    await sequelize.authenticate();
-    console.log('✅ SQLite Database connected successfully.');
-
-    await sequelize.sync();
-    await ensureSchema();
-    console.log('✅ Sequelize Models synchronized.');
-
-    await seedDatabase();
+    await ensureInit();
 
     app.listen(PORT, () => {
       console.log(`🚀 G-Zen Phone Store Server running on http://localhost:${PORT}`);
