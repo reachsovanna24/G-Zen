@@ -1,83 +1,9 @@
+const { productService } = require('../services/dataService');
 const { Product } = require('../models');
-const { Op } = require('sequelize');
-const { supabase } = require('../config/supabase');
-const { seedProducts } = require('../seed/seedData');
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const { category, search, brand, featured, sort } = req.query;
-    let products = [];
-
-    try {
-      const whereClause = {};
-
-      if (category && category !== 'All') {
-        whereClause.category = category;
-      }
-
-      if (brand) {
-        whereClause.brand = brand;
-      }
-
-      if (featured === 'true') {
-        whereClause.isFeatured = true;
-      }
-
-      if (search && Op && Op.like) {
-        whereClause[Op.or] = [
-          { name: { [Op.like]: `%${search}%` } },
-          { description: { [Op.like]: `%${search}%` } },
-          { brand: { [Op.like]: `%${search}%` } },
-        ];
-      }
-
-      let order = [['id', 'DESC']];
-      if (sort === 'price-asc') {
-        order = [['price', 'ASC']];
-      } else if (sort === 'price-desc') {
-        order = [['price', 'DESC']];
-      } else if (sort === 'rating') {
-        order = [['rating', 'DESC']];
-      }
-
-      products = await Product.findAll({
-        where: whereClause,
-        order,
-      });
-    } catch (dbErr) {
-      console.warn('Product database query fallback to seedProducts:', dbErr.message);
-    }
-
-    // Fallback to seed catalog if database query returned empty or failed
-    if (!products || products.length === 0) {
-      let list = [...seedProducts];
-      if (category && category !== 'All') {
-        list = list.filter((p) => p.category === category);
-      }
-      if (brand) {
-        list = list.filter((p) => p.brand && p.brand.toLowerCase() === brand.toLowerCase());
-      }
-      if (featured === 'true') {
-        list = list.filter((p) => p.isFeatured);
-      }
-      if (search) {
-        const query = search.toLowerCase();
-        list = list.filter(
-          (p) =>
-            p.name.toLowerCase().includes(query) ||
-            (p.brand && p.brand.toLowerCase().includes(query)) ||
-            (p.description && p.description.toLowerCase().includes(query))
-        );
-      }
-      if (sort === 'price-asc') {
-        list.sort((a, b) => a.price - b.price);
-      } else if (sort === 'price-desc') {
-        list.sort((a, b) => b.price - a.price);
-      } else if (sort === 'rating') {
-        list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      }
-      products = list;
-    }
+    const products = await productService.getAllProducts(req.query);
 
     return res.status(200).json({
       success: true,
@@ -86,28 +12,14 @@ exports.getAllProducts = async (req, res) => {
     });
   } catch (error) {
     console.error('Get products error:', error);
-    return res.status(200).json({
-      success: true,
-      count: seedProducts.length,
-      products: seedProducts,
-    });
+    return res.status(500).json({ success: false, message: 'Failed to retrieve products.', error: error.message });
   }
 };
 
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    let product = null;
-
-    try {
-      product = await Product.findByPk(id);
-    } catch (dbErr) {
-      console.warn('Product findByPk database fallback:', dbErr.message);
-    }
-
-    if (!product) {
-      product = seedProducts.find((p) => String(p.id) === String(id));
-    }
+    const product = await productService.getProductById(id);
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found.' });
@@ -118,10 +30,6 @@ exports.getProductById = async (req, res) => {
       product,
     });
   } catch (error) {
-    const fallback = seedProducts.find((p) => String(p.id) === String(req.params.id));
-    if (fallback) {
-      return res.status(200).json({ success: true, product: fallback });
-    }
     return res.status(500).json({ success: false, message: 'Failed to retrieve product.' });
   }
 };
@@ -134,7 +42,7 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name, category, price, and stock are required.' });
     }
 
-    const product = await Product.create({
+    const product = await productService.createProduct({
       name,
       category,
       price: parseFloat(price),
@@ -148,10 +56,6 @@ exports.createProduct = async (req, res) => {
       isFeatured: !!isFeatured,
       warranty: warranty || '1 Year Official Warranty (Cambodia)',
     });
-
-    if (supabase && typeof supabase.syncProduct === 'function') {
-      supabase.syncProduct(product).catch(err => console.error('[Supabase syncProduct warning]:', err.message));
-    }
 
     return res.status(201).json({
       success: true,
@@ -167,22 +71,16 @@ exports.createProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await Product.findByPk(id);
+    const updated = await productService.updateProduct(id, req.body);
 
-    if (!product) {
+    if (!updated) {
       return res.status(404).json({ success: false, message: 'Product not found.' });
-    }
-
-    await product.update(req.body);
-
-    if (supabase && typeof supabase.syncProduct === 'function') {
-      supabase.syncProduct(product).catch(err => console.error('[Supabase syncProduct warning]:', err.message));
     }
 
     return res.status(200).json({
       success: true,
       message: 'Product updated successfully.',
-      product,
+      product: updated,
     });
   } catch (error) {
     console.error('Update product error:', error);
@@ -193,13 +91,7 @@ exports.updateProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await Product.findByPk(id);
-
-    if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found.' });
-    }
-
-    await product.destroy();
+    await productService.deleteProduct(id);
 
     return res.status(200).json({
       success: true,
@@ -213,13 +105,13 @@ exports.deleteProduct = async (req, res) => {
 exports.cloneProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await Product.findByPk(id);
+    const product = await productService.getProductById(id);
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }
 
-    const clonedData = {
+    const cloned = await productService.createProduct({
       name: `${product.name} (Copy)`,
       category: product.category,
       price: product.price,
@@ -232,14 +124,12 @@ exports.cloneProduct = async (req, res) => {
       specs: product.specs,
       isFeatured: false,
       warranty: product.warranty,
-    };
-
-    const newProduct = await Product.create(clonedData);
+    });
 
     return res.status(201).json({
       success: true,
-      message: `Product cloned as "${newProduct.name}".`,
-      product: newProduct,
+      message: `Product cloned as "${cloned.name}".`,
+      product: cloned,
     });
   } catch (error) {
     console.error('Clone product error:', error);
@@ -249,74 +139,46 @@ exports.cloneProduct = async (req, res) => {
 
 exports.bulkStockUpdate = async (req, res) => {
   try {
-    const { delta, target } = req.body; // target: 'all', 'low', or array of IDs
-    let productsToUpdate = [];
-
-    if (Array.isArray(target)) {
-      productsToUpdate = await Product.findAll({ where: { id: target } });
-    } else if (target === 'low') {
-      productsToUpdate = await Product.findAll({ where: { stock: { [Op.lte]: 5 } } });
-    } else {
-      productsToUpdate = await Product.findAll();
-    }
-
+    const { delta } = req.body;
     const added = parseInt(delta || 10, 10);
-    for (const p of productsToUpdate) {
-      p.stock = Math.max(0, p.stock + added);
-      await p.save();
+    const products = await productService.getAllProducts();
+
+    for (const p of products) {
+      await productService.updateProduct(p.id, { stock: Math.max(0, p.stock + added) });
     }
 
     return res.status(200).json({
       success: true,
-      message: `Updated stock for ${productsToUpdate.length} product(s) by ${added > 0 ? '+' : ''}${added} units.`,
-      count: productsToUpdate.length,
+      message: `Adjusted inventory by ${added > 0 ? '+' : ''}${added} units across all catalog products.`,
     });
   } catch (error) {
-    console.error('Bulk stock error:', error);
+    console.error('Bulk stock update error:', error);
     return res.status(500).json({ success: false, message: 'Bulk stock update failed.' });
   }
 };
 
 exports.bulkDiscount = async (req, res) => {
   try {
-    const { percentage, category, action } = req.body; // action: 'apply' or 'reset'
-    const whereClause = {};
-    if (category && category !== 'All') {
-      whereClause.category = category;
-    }
+    const { percent } = req.body;
+    const pct = parseFloat(percent || 10);
+    const factor = (100 - pct) / 100;
+    const products = await productService.getAllProducts();
 
-    const products = await Product.findAll({ where: whereClause });
-
-    if (action === 'reset') {
-      for (const p of products) {
-        if (p.originalPrice && p.originalPrice > p.price) {
-          p.price = p.originalPrice;
-        }
-        p.originalPrice = null;
-        await p.save();
-      }
-      return res.status(200).json({
-        success: true,
-        message: `Discounts reset for ${products.length} product(s).`,
-      });
-    }
-
-    const pct = parseFloat(percentage || 10) / 100;
     for (const p of products) {
-      if (!p.originalPrice) {
-        p.originalPrice = p.price;
-      }
-      p.price = Math.round(p.originalPrice * (1 - pct));
-      await p.save();
+      const orig = p.originalPrice || p.price;
+      const newPrice = Math.round(orig * factor);
+      await productService.updateProduct(p.id, {
+        originalPrice: orig,
+        price: newPrice,
+      });
     }
 
     return res.status(200).json({
       success: true,
-      message: `Applied ${percentage || 10}% discount to ${products.length} product(s).`,
+      message: `Applied ${pct}% promotional discount across catalog products.`,
     });
   } catch (error) {
     console.error('Bulk discount error:', error);
     return res.status(500).json({ success: false, message: 'Bulk discount failed.' });
   }
 };
-

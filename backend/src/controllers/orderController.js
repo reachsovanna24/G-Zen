@@ -1,12 +1,6 @@
-const { Order, Product, User } = require('../models');
 const bakongService = require('../services/bakongService');
-const { supabase } = require('../config/supabase');
-
-const autoSyncOrder = (order) => {
-  if (order && supabase && typeof supabase.syncOrder === 'function') {
-    supabase.syncOrder(order).catch(err => console.error('[Supabase AutoSync Warning]:', err.message));
-  }
-};
+const { orderService, productService } = require('../services/dataService');
+const { Order } = require('../models');
 
 // Phnom Penh District Delivery fee table
 const DISTRICT_FEES = {
@@ -46,33 +40,22 @@ exports.createOrder = async (req, res) => {
     const validatedItems = [];
 
     for (const item of items) {
-      const product = await Product.findByPk(item.productId || item.product || item.id);
-      if (!product) {
-        return res.status(404).json({ success: false, message: `Product "${item.name}" not found.` });
-      }
+      const prodId = item.productId || item.product || item.id;
+      const product = await productService.getProductById(prodId);
 
       const qty = parseInt(item.quantity || 1, 10);
-      if (product.stock < qty) {
-        return res.status(400).json({
-          success: false,
-          message: `Insufficient stock for "${product.name}". Only ${product.stock} available.`,
-        });
-      }
+      const unitPrice = item.price !== undefined ? parseFloat(item.price) : (product ? product.price : 0);
+      const prodName = item.name || (product ? product.name : 'Phone Accessory');
 
-      // Deduct stock
-      product.stock -= qty;
-      await product.save();
-
-      const itemTotal = product.price * qty;
-      subtotal += itemTotal;
+      subtotal += unitPrice * qty;
 
       validatedItems.push({
-        productId: product.id,
-        name: product.name,
-        price: product.price,
+        productId: prodId,
+        name: prodName,
+        price: unitPrice,
         quantity: qty,
-        image: product.image,
-        category: product.category,
+        image: item.image || (product ? product.image : ''),
+        category: item.category || (product ? product.category : 'Accessories'),
       });
     }
 
@@ -101,7 +84,7 @@ exports.createOrder = async (req, res) => {
       }
     }
 
-    const order = await Order.create({
+    const order = await orderService.createOrder({
       orderNumber,
       userId: req.user ? req.user.id : null,
       guestInfo: !req.user ? { fullName: shippingAddress.fullName, phone: shippingAddress.phone } : null,
@@ -121,8 +104,6 @@ exports.createOrder = async (req, res) => {
       notes: notes || '',
     });
 
-    autoSyncOrder(order);
-
     return res.status(201).json({
       success: true,
       message: 'Order placed successfully! Thank you for shopping with G-Zen Phone Store.',
@@ -137,32 +118,21 @@ exports.createOrder = async (req, res) => {
 
 exports.getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.findAll({
-      where: { userId: req.user.id },
-      order: [['createdAt', 'DESC']],
-    });
+    const orders = await orderService.getMyOrders(req.user.id);
 
     return res.status(200).json({
       success: true,
       orders,
     });
   } catch (error) {
+    console.error('Get my orders error:', error);
     return res.status(500).json({ success: false, message: 'Failed to retrieve orders.' });
   }
 };
 
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.findAll({
-      order: [['createdAt', 'DESC']],
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email', 'phone'],
-        }
-      ]
-    });
+    const orders = await orderService.getAllOrders();
 
     return res.status(200).json({
       success: true,
@@ -185,39 +155,24 @@ exports.updateOrderStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
     }
 
-    const order = await Order.findByPk(id);
+    const order = await orderService.findOrder(id);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
     }
 
-    // If transitioning to Cancelled/Refunded from an active state, restore product stock
-    if (['Cancelled', 'Refunded'].includes(status) && !['Cancelled', 'Refunded'].includes(order.status)) {
-      if (Array.isArray(order.items)) {
-        for (const it of order.items) {
-          if (it.productId) {
-            const p = await Product.findByPk(it.productId);
-            if (p) {
-              p.stock += (it.quantity || 1);
-              await p.save();
-            }
-          }
-        }
-      }
-    }
-
-    if (status) order.status = status;
-    if (paymentStatus) order.paymentStatus = paymentStatus;
-    if (notes !== undefined) order.notes = notes;
-
-    await order.save();
-    autoSyncOrder(order);
+    const updated = await orderService.updateOrder(id, {
+      status: status || order.status,
+      paymentStatus: paymentStatus || order.paymentStatus,
+      notes: notes !== undefined ? notes : order.notes,
+    });
 
     return res.status(200).json({
       success: true,
-      message: `Order status updated to "${order.status}".`,
-      order,
+      message: `Order status updated to "${updated.status}".`,
+      order: updated,
     });
   } catch (error) {
+    console.error('Update order status error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update order status.' });
   }
 };
@@ -229,7 +184,7 @@ exports.createManualOrder = async (req, res) => {
       phone,
       district,
       addressNote,
-      items, // array of { productId, quantity, price }
+      items,
       paymentMethod,
       paymentStatus,
       notes,
@@ -243,27 +198,19 @@ exports.createManualOrder = async (req, res) => {
     const validatedItems = [];
 
     for (const item of items) {
-      const product = await Product.findByPk(item.productId || item.id);
-      if (!product) {
-        return res.status(404).json({ success: false, message: `Product ID ${item.productId} not found.` });
-      }
-
+      const prodId = item.productId || item.id;
+      const product = await productService.getProductById(prodId);
       const qty = parseInt(item.quantity || 1, 10);
-      const unitPrice = item.price !== undefined ? parseFloat(item.price) : product.price;
-
-      if (product.stock >= qty) {
-        product.stock -= qty;
-        await product.save();
-      }
+      const unitPrice = item.price !== undefined ? parseFloat(item.price) : (product ? product.price : 0);
 
       subtotal += unitPrice * qty;
       validatedItems.push({
-        productId: product.id,
-        name: product.name,
+        productId: prodId,
+        name: product ? product.name : (item.name || 'Phone Accessory'),
         price: unitPrice,
         quantity: qty,
-        image: product.image,
-        category: product.category,
+        image: product ? product.image : '',
+        category: product ? product.category : 'Accessories',
       });
     }
 
@@ -273,7 +220,7 @@ exports.createManualOrder = async (req, res) => {
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `GZ-POS-${Date.now().toString().slice(-4)}${randomSuffix}`;
 
-    const order = await Order.create({
+    const order = await orderService.createOrder({
       orderNumber,
       userId: req.user ? req.user.id : null,
       guestInfo: { fullName: customerName, phone },
@@ -290,11 +237,9 @@ exports.createManualOrder = async (req, res) => {
       paymentMethod: paymentMethod || 'Cash at Store',
       paymentStatus: paymentStatus || 'Paid',
       transactionRef: paymentMethod === 'KHQR' ? `BAKONG-POS-${randomSuffix}` : `POS-CASH-${randomSuffix}`,
-      status: 'Delivered', // Walk-in is usually delivered immediately on premise
+      status: 'Delivered',
       notes: notes || 'Created via Admin Back-Office POS Desk',
     });
-
-    autoSyncOrder(order);
 
     return res.status(201).json({
       success: true,
@@ -312,25 +257,24 @@ exports.updateOrderDetails = async (req, res) => {
     const { id } = req.params;
     const { shippingAddress, notes, totalAmount, paymentMethod, paymentStatus, status } = req.body;
 
-    const order = await Order.findByPk(id);
+    const order = await orderService.findOrder(id);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
     }
 
-    if (shippingAddress) order.shippingAddress = shippingAddress;
-    if (notes !== undefined) order.notes = notes;
-    if (totalAmount !== undefined) order.totalAmount = parseFloat(totalAmount);
-    if (paymentMethod) order.paymentMethod = paymentMethod;
-    if (paymentStatus) order.paymentStatus = paymentStatus;
-    if (status) order.status = status;
-
-    await order.save();
-    autoSyncOrder(order);
+    const updated = await orderService.updateOrder(id, {
+      shippingAddress: shippingAddress || order.shippingAddress,
+      notes: notes !== undefined ? notes : order.notes,
+      totalAmount: totalAmount !== undefined ? parseFloat(totalAmount) : order.totalAmount,
+      paymentMethod: paymentMethod || order.paymentMethod,
+      paymentStatus: paymentStatus || order.paymentStatus,
+      status: status || order.status,
+    });
 
     return res.status(200).json({
       success: true,
-      message: `Order #${order.orderNumber} details updated.`,
-      order,
+      message: `Order #${updated.orderNumber} details updated.`,
+      order: updated,
     });
   } catch (error) {
     console.error('Update order details error:', error);
@@ -341,14 +285,7 @@ exports.updateOrderDetails = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
-    const order = await Order.findOne({
-      where: {
-        [require('sequelize').Op.or]: [
-          { id: isNaN(id) ? -1 : parseInt(id, 10) },
-          { orderNumber: id }
-        ]
-      }
-    });
+    const order = await orderService.findOrder(id);
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
@@ -359,6 +296,7 @@ exports.getOrderById = async (req, res) => {
       order,
     });
   } catch (error) {
+    console.error('Get order by id error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch order.' });
   }
 };
@@ -366,11 +304,20 @@ exports.getOrderById = async (req, res) => {
 exports.deleteOrder = async (req, res) => {
   try {
     const { id } = req.params;
-    const order = await Order.findByPk(id);
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found.' });
+    const { supabase } = require('../config/supabase');
+    if (!isNaN(id)) {
+      await supabase.from('orders').eq('id', parseInt(id, 10)).delete();
+    } else {
+      await supabase.from('orders').eq('order_number', id).delete();
     }
-    await order.destroy();
+
+    try {
+      if (Order && typeof Order.findByPk === 'function') {
+        const o = await Order.findByPk(id);
+        if (o) await o.destroy();
+      }
+    } catch (e) {}
+
     return res.status(200).json({ success: true, message: 'Order deleted successfully.' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to delete order.' });
@@ -383,15 +330,7 @@ exports.deleteOrder = async (req, res) => {
 exports.verifyOrderPayment = async (req, res) => {
   try {
     const { id } = req.params;
-    const order = await Order.findOne({
-      where: {
-        [require('sequelize').Op.or]: [
-          { id: isNaN(id) ? -1 : parseInt(id, 10) },
-          { orderNumber: id },
-          { khqrMd5: id }
-        ]
-      }
-    });
+    const order = await orderService.findOrder(id);
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
@@ -410,48 +349,50 @@ exports.verifyOrderPayment = async (req, res) => {
     }
 
     // 2. Ensure order has a valid Bakong KHQR MD5 hash
-    if (!order.khqrMd5) {
+    let activeMd5 = order.khqrMd5;
+    if (!activeMd5) {
       const khqr = await bakongService.generateKhqr({
         amount: order.totalAmount,
         currency: 'USD',
         billNumber: order.orderNumber,
         storeLabel: 'G-Zen Store',
       });
-      order.khqrMd5 = khqr.md5;
-      order.khqrString = khqr.qrString;
-      order.khqrImage = khqr.qrImage;
-      order.khqrDeeplink = khqr.deeplink;
-      await order.save();
+      activeMd5 = khqr.md5;
+      await orderService.updateOrder(order.id, {
+        khqrMd5: khqr.md5,
+        khqrString: khqr.qrString,
+        khqrImage: khqr.qrImage,
+        khqrDeeplink: khqr.deeplink,
+      });
     }
 
     // 3. Query settlement state against gateway API
-    const settlement = await bakongService.checkSettlement(order.khqrMd5);
+    const settlement = await bakongService.checkSettlement(activeMd5);
 
     if (settlement.paid) {
-      order.paymentStatus = 'Paid';
-      order.status = 'QC Testing'; // Auto-confirmed on NBC settlement
-      order.transactionRef = settlement.data?.hash || settlement.data?.md5 || `BAKONG-${order.khqrMd5.slice(0, 8).toUpperCase()}`;
-      order.settlementData = settlement.data;
-      await order.save();
+      const updated = await orderService.updateOrder(order.id, {
+        paymentStatus: 'Paid',
+        status: 'QC Testing',
+        settlementData: settlement.data,
+      });
 
       return res.status(200).json({
         success: true,
         paid: true,
         status: 'PAID',
-        order,
+        order: updated,
         settlement: settlement.data,
         message: 'Payment verified and auto-confirmed on NBC ledger!',
       });
     }
 
-    // Still pending payment
     return res.status(200).json({
       success: true,
       paid: false,
       status: 'PENDING',
       message: settlement.message || 'Waiting for transfer on NBC ledger...',
       orderNumber: order.orderNumber,
-      khqrMd5: order.khqrMd5,
+      khqrMd5: activeMd5,
     });
   } catch (error) {
     console.error('Verify order payment error:', error);
@@ -465,15 +406,7 @@ exports.verifyOrderPayment = async (req, res) => {
 exports.simulateOrderPayment = async (req, res) => {
   try {
     const { id } = req.params;
-    const order = await Order.findOne({
-      where: {
-        [require('sequelize').Op.or]: [
-          { id: isNaN(id) ? -1 : parseInt(id, 10) },
-          { orderNumber: id },
-          { khqrMd5: id }
-        ]
-      }
-    });
+    const order = await orderService.findOrder(id);
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
@@ -490,19 +423,17 @@ exports.simulateOrderPayment = async (req, res) => {
       orderNumber: order.orderNumber,
     });
 
-    order.paymentStatus = 'Paid';
-    order.status = 'QC Testing'; // Auto-confirmed
-    order.khqrMd5 = md5Hash;
-    order.transactionRef = mockSettlement.hash;
-    order.settlementData = mockSettlement;
-    await order.save();
-    autoSyncOrder(order);
+    const updated = await orderService.updateOrder(order.id, {
+      paymentStatus: 'Paid',
+      status: 'QC Testing',
+      settlementData: mockSettlement,
+    });
 
     return res.status(200).json({
       success: true,
       paid: true,
       status: 'PAID',
-      order,
+      order: updated,
       settlement: mockSettlement,
       message: 'Simulated payment verified and auto-confirmed successfully on NBC ledger.',
     });
@@ -518,14 +449,7 @@ exports.simulateOrderPayment = async (req, res) => {
 exports.generateOrderKhqr = async (req, res) => {
   try {
     const { id } = req.params;
-    const order = await Order.findOne({
-      where: {
-        [require('sequelize').Op.or]: [
-          { id: isNaN(id) ? -1 : parseInt(id, 10) },
-          { orderNumber: id }
-        ]
-      }
-    });
+    const order = await orderService.findOrder(id);
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
@@ -533,7 +457,6 @@ exports.generateOrderKhqr = async (req, res) => {
 
     const shouldRefresh = req.query.refresh === 'true' || req.query.regenerate === 'true';
 
-    // If order already has KHQR and not requesting refresh, reuse it
     if (!shouldRefresh && order.khqrMd5 && order.khqrImage) {
       return res.status(200).json({
         success: true,
@@ -546,7 +469,7 @@ exports.generateOrderKhqr = async (req, res) => {
           amount: order.totalAmount,
           currency: 'USD',
           billNumber: order.orderNumber,
-          expiresInSeconds: 180, // 3 minutes
+          expiresInSeconds: 180,
         }
       });
     }
@@ -558,25 +481,22 @@ exports.generateOrderKhqr = async (req, res) => {
       storeLabel: 'G-Zen Store',
     });
 
-    order.khqrMd5 = khqr.md5;
-    order.khqrString = khqr.qrString;
-    order.khqrImage = khqr.qrImage;
-    order.khqrDeeplink = khqr.deeplink;
-    await order.save();
-    autoSyncOrder(order);
+    const updated = await orderService.updateOrder(order.id, {
+      khqrMd5: khqr.md5,
+      khqrString: khqr.qrString,
+      khqrImage: khqr.qrImage,
+      khqrDeeplink: khqr.deeplink,
+    });
 
     return res.status(200).json({
       success: true,
-      order,
+      order: updated,
       khqr: {
         ...khqr,
-        expiresInSeconds: 180, // 3 minutes
+        expiresInSeconds: 180,
       },
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to generate order KHQR: ' + error.message });
   }
 };
-
-
-

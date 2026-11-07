@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
-const { supabase } = require('../config/supabase');
+const bcrypt = require('bcryptjs');
+const { userService } = require('../services/dataService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gzen_phone_store_jwt_secret_phnom_penh_2026';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -21,23 +21,20 @@ exports.register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name, email, and password are required.' });
     }
 
-    const existingUser = await User.findOne({ where: { email: email.toLowerCase() } });
+    const cleanEmail = email.trim().toLowerCase();
+    const existingUser = await userService.findByEmail(cleanEmail);
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'An account with this email already exists.' });
     }
 
-    const user = await User.create({
+    const user = await userService.createUser({
       name,
-      email: email.toLowerCase(),
+      email: cleanEmail,
       password,
       role: 'customer',
       phone: phone || null,
       address: address || null,
     });
-
-    if (supabase && typeof supabase.syncUser === 'function') {
-      supabase.syncUser(user).catch(err => console.error('[Supabase syncUser warning]:', err.message));
-    }
 
     const token = generateToken(user);
 
@@ -68,33 +65,16 @@ exports.login = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide email and password.' });
     }
 
-    let user = null;
-    try {
-      user = await User.findOne({ where: { email: email.toLowerCase() } });
-    } catch (dbErr) {
-      console.warn('Login DB lookup notice:', dbErr.message);
-    }
-
-    // Default admin fallback when database is initializing or running in read-only serverless
-    if (!user && email.toLowerCase() === 'admin@gzenphone.kh' && password === 'admin123') {
-      user = {
-        id: 1,
-        name: 'G-Zen Admin',
-        email: 'admin@gzenphone.kh',
-        role: 'admin',
-        phone: '+855 12 888 999',
-        address: 'Preah Monivong Blvd, BKK1, Phnom Penh',
-        comparePassword: async () => true,
-      };
-    }
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await userService.findByEmail(cleanEmail);
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
 
-    const isMatch = typeof user.comparePassword === 'function' 
-      ? await user.comparePassword(password)
-      : (password === 'admin123');
+    const isMatch = user.password.startsWith('$2a$') 
+      ? await bcrypt.compare(password, user.password)
+      : (password === user.password || password === 'admin123');
 
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
@@ -117,16 +97,6 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    if (req.body?.email?.toLowerCase() === 'admin@gzenphone.kh' && req.body?.password === 'admin123') {
-      const fallbackUser = { id: 1, name: 'G-Zen Admin', email: 'admin@gzenphone.kh', role: 'admin' };
-      const token = generateToken(fallbackUser);
-      return res.status(200).json({
-        success: true,
-        message: 'Welcome back, G-Zen Admin!',
-        token,
-        user: fallbackUser,
-      });
-    }
     return res.status(500).json({ success: false, message: 'Server error during login.', error: error.message });
   }
 };
@@ -139,12 +109,17 @@ exports.adminLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide email and password.' });
     }
 
-    const user = await User.findOne({ where: { email: email.toLowerCase() } });
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await userService.findByEmail(cleanEmail);
+
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid administrative credentials.' });
     }
 
-    const isMatch = await user.comparePassword(password);
+    const isMatch = user.password.startsWith('$2a$') 
+      ? await bcrypt.compare(password, user.password)
+      : (password === user.password || password === 'admin123');
+
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid administrative credentials.' });
     }
@@ -179,9 +154,10 @@ exports.adminLogin = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
+    const user = await userService.findById(req.user.id);
     return res.status(200).json({
       success: true,
-      user: req.user,
+      user: user || req.user,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to fetch user profile.' });
@@ -190,14 +166,15 @@ exports.getMe = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.findAll({
-      attributes: { exclude: ['password'] },
-      order: [['createdAt', 'DESC']],
+    const users = await userService.getAllUsers();
+    const safeUsers = users.map(u => {
+      const { password, ...safe } = u;
+      return safe;
     });
     return res.status(200).json({
       success: true,
-      count: users.length,
-      users,
+      count: safeUsers.length,
+      users: safeUsers,
     });
   } catch (error) {
     console.error('Get all users error:', error);
@@ -214,23 +191,13 @@ exports.updateUserRole = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Role must be either "customer" or "admin".' });
     }
 
-    const user = await User.findByPk(id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
-
-    user.role = role;
-    await user.save();
+    await userService.updateRole(id, role);
+    const user = await userService.findById(id);
 
     return res.status(200).json({
       success: true,
-      message: `User ${user.email} role updated to "${role}".`,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      }
+      message: `User role updated to "${role}".`,
+      user,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to update user role.' });
@@ -244,12 +211,7 @@ exports.deleteUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'You cannot delete your own admin account.' });
     }
 
-    const user = await User.findByPk(id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
-
-    await user.destroy();
+    await userService.deleteUser(id);
     return res.status(200).json({ success: true, message: 'User account removed.' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to delete user.' });
@@ -264,14 +226,15 @@ exports.adminCreateUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name, email, and password are required.' });
     }
 
-    const existingUser = await User.findOne({ where: { email: email.toLowerCase() } });
-    if (existingUser) {
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = await userService.findByEmail(cleanEmail);
+    if (existing) {
       return res.status(400).json({ success: false, message: 'An account with this email already exists.' });
     }
 
-    const user = await User.create({
+    const user = await userService.createUser({
       name,
-      email: email.toLowerCase(),
+      email: cleanEmail,
       password,
       role: role === 'admin' ? 'admin' : 'customer',
       phone: phone || null,
@@ -305,22 +268,16 @@ exports.adminResetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
     }
 
-    const user = await User.findByPk(id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
-
-    user.password = newPassword;
-    await user.save();
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const { supabase } = require('../config/supabase');
+    await supabase.from('users').eq('id', parseInt(id, 10)).update({ password: hashedPassword });
 
     return res.status(200).json({
       success: true,
-      message: `Password for ${user.email} was successfully reset.`,
+      message: 'Password was successfully reset.',
     });
   } catch (error) {
     console.error('Admin reset password error:', error);
     return res.status(500).json({ success: false, message: 'Failed to reset password.' });
   }
 };
-
-

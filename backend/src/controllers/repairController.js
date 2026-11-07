@@ -1,11 +1,4 @@
-const { RepairBooking } = require('../models');
-const { supabase } = require('../config/supabase');
-
-const autoSyncRepair = (repair) => {
-  if (repair && supabase && typeof supabase.syncRepair === 'function') {
-    supabase.syncRepair(repair).catch(err => console.error('[Supabase AutoSync Warning]:', err.message));
-  }
-};
+const { repairService } = require('../services/dataService');
 
 exports.createBooking = async (req, res) => {
   try {
@@ -28,7 +21,7 @@ exports.createBooking = async (req, res) => {
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const ticketNumber = `REP-${Date.now().toString().slice(-4)}${randomSuffix}`;
 
-    const booking = await RepairBooking.create({
+    const booking = await repairService.createRepair({
       ticketNumber,
       customerName,
       phone,
@@ -38,8 +31,6 @@ exports.createBooking = async (req, res) => {
       preferredDate: preferredDate || new Date().toISOString().split('T')[0],
       status: 'Received',
     });
-
-    autoSyncRepair(booking);
 
     return res.status(201).json({
       success: true,
@@ -54,9 +45,7 @@ exports.createBooking = async (req, res) => {
 
 exports.getAllBookings = async (req, res) => {
   try {
-    const bookings = await RepairBooking.findAll({
-      order: [['createdAt', 'DESC']],
-    });
+    const bookings = await repairService.getAllRepairs();
 
     return res.status(200).json({
       success: true,
@@ -64,6 +53,7 @@ exports.getAllBookings = async (req, res) => {
       bookings,
     });
   } catch (error) {
+    console.error('Get all repairs error:', error);
     return res.status(500).json({ success: false, message: 'Failed to retrieve repair bookings.' });
   }
 };
@@ -78,29 +68,26 @@ exports.updateBookingStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
     }
 
-    const booking = await RepairBooking.findByPk(id);
-    if (!booking) {
-      return res.status(404).json({ success: false, message: 'Repair ticket not found.' });
-    }
+    await repairService.updateRepair(id, {
+      status,
+      technicianNotes,
+      estimatedPrice,
+      deviceModel,
+      serviceType,
+      issueDescription,
+      customerName,
+      phone,
+    });
 
-    if (status) booking.status = status;
-    if (technicianNotes !== undefined) booking.technicianNotes = technicianNotes;
-    if (estimatedPrice !== undefined) booking.estimatedPrice = parseFloat(estimatedPrice);
-    if (deviceModel) booking.deviceModel = deviceModel;
-    if (serviceType) booking.serviceType = serviceType;
-    if (issueDescription) booking.issueDescription = issueDescription;
-    if (customerName) booking.customerName = customerName;
-    if (phone) booking.phone = phone;
-
-    await booking.save();
-    autoSyncRepair(booking);
+    const booking = await repairService.getByTicket(id) || { id, status };
 
     return res.status(200).json({
       success: true,
-      message: `Repair ticket ${booking.ticketNumber} updated successfully.`,
+      message: 'Repair ticket updated successfully.',
       booking,
     });
   } catch (error) {
+    console.error('Update repair error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update repair booking.' });
   }
 };
@@ -128,7 +115,7 @@ exports.createWalkinBooking = async (req, res) => {
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const ticketNumber = `REP-WALK-${Date.now().toString().slice(-4)}${randomSuffix}`;
 
-    const booking = await RepairBooking.create({
+    const booking = await repairService.createRepair({
       ticketNumber,
       customerName,
       phone,
@@ -141,8 +128,6 @@ exports.createWalkinBooking = async (req, res) => {
       status: status || 'Received',
     });
 
-    autoSyncRepair(booking);
-
     return res.status(201).json({
       success: true,
       message: `Walk-in repair ticket #${ticketNumber} created successfully.`,
@@ -154,11 +139,10 @@ exports.createWalkinBooking = async (req, res) => {
   }
 };
 
-
 exports.getBookingByTicket = async (req, res) => {
   try {
     const { ticket } = req.params;
-    const booking = await RepairBooking.findOne({ where: { ticketNumber: ticket } });
+    const booking = await repairService.getByTicket(ticket);
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Repair ticket not found.' });
@@ -176,14 +160,9 @@ exports.getBookingByTicket = async (req, res) => {
 exports.deleteBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const booking = await RepairBooking.findByPk(id);
-    if (!booking) {
-      return res.status(404).json({ success: false, message: 'Repair ticket not found.' });
-    }
-    await booking.destroy();
+    await repairService.deleteRepair(id);
     return res.status(200).json({ success: true, message: 'Repair ticket deleted successfully.' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to delete repair booking.' });
   }
 };
-

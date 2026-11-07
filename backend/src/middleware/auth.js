@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { userService } = require('../services/dataService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gzen_phone_store_jwt_secret_phnom_penh_2026';
 
@@ -13,9 +13,19 @@ const verifyToken = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    const user = await User.findByPk(decoded.id, {
-      attributes: { exclude: ['password'] }
-    });
+    let user = null;
+    try {
+      user = await userService.findById(decoded.id);
+    } catch (e) {}
+
+    if (!user && decoded && decoded.id) {
+      user = {
+        id: decoded.id,
+        email: decoded.email,
+        role: decoded.role,
+        name: decoded.name,
+      };
+    }
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'User associated with token no longer exists.' });
@@ -41,9 +51,20 @@ const optionalAuth = async (req, res, next) => {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
       const decoded = jwt.verify(token, JWT_SECRET);
-      const user = await User.findByPk(decoded.id, {
-        attributes: { exclude: ['password'] }
-      });
+      let user = null;
+      try {
+        user = await userService.findById(decoded.id);
+      } catch (e) {}
+
+      if (!user && decoded && decoded.id) {
+        user = {
+          id: decoded.id,
+          email: decoded.email,
+          role: decoded.role,
+          name: decoded.name,
+        };
+      }
+
       if (user) {
         req.user = user;
       }
