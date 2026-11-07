@@ -4,9 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
 
-const uploadsDir = path.join(__dirname, '../../uploads');
+const isVercel = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const uploadsDir = isVercel 
+  ? '/tmp/uploads' 
+  : path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  } catch (e) {}
 }
 
 // POST /api/upload - Secured endpoint for administrative product image uploads

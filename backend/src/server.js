@@ -28,11 +28,24 @@ app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ limit: '25mb', extended: true }));
 
 // Serve static uploads directory for device product images
-const uploadsDir = path.join(__dirname, '../uploads');
+const isVercel = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const uploadsDir = isVercel 
+  ? '/tmp/uploads' 
+  : path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  } catch (e) {}
 }
 app.use('/uploads', express.static(uploadsDir));
+
+// Vercel serverless route compatibility middleware
+app.use((req, res, next) => {
+  if (!req.url.startsWith('/api') && !req.url.startsWith('/uploads')) {
+    req.url = '/api' + req.url;
+  }
+  next();
+});
 
 // Request logging in development
 app.use((req, res, next) => {
@@ -96,4 +109,9 @@ const startServer = async () => {
   }
 };
 
-startServer();
+module.exports = app;
+module.exports.startServer = startServer;
+
+if (require.main === module) {
+  startServer();
+}
