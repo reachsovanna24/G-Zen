@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useCartStore } from '../stores/cartStore';
 import { useProductStore } from '../stores/productStore';
 import { useWishlistStore } from '../stores/wishlistStore';
@@ -13,10 +14,21 @@ const props = defineProps({
   },
 });
 
+const router = useRouter();
 const cartStore = useCartStore();
 const productStore = useProductStore();
 const wishlistStore = useWishlistStore();
 const langStore = useLanguageStore();
+
+const goToProduct = () => {
+  if (props.product?.id) {
+    router.push(`/product/${props.product.id}`);
+  }
+};
+
+const handleImgError = (e) => {
+  e.target.src = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80';
+};
 
 const discountPercent = computed(() => {
   if (props.product.originalPrice && props.product.originalPrice > props.product.price) {
@@ -50,7 +62,7 @@ const toggleFav = () => {
 </script>
 
 <template>
-  <div class="product-card glass-card glass-card-hover rounded-2xl overflow-hidden flex flex-col group relative">
+  <div @click="goToProduct" class="product-card glass-card glass-card-hover rounded-2xl overflow-hidden flex flex-col group relative cursor-pointer">
     <!-- Top Badges Row -->
     <div class="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
       <span 
@@ -80,10 +92,11 @@ const toggleFav = () => {
     </button>
 
     <!-- Image Container with Quick View & Cart Actions on Hover -->
-    <div class="relative pt-[75%] bg-slate-950 overflow-hidden cursor-pointer" @click="productStore.openQuickView(product)">
+    <div class="relative pt-[75%] bg-slate-950 overflow-hidden">
       <img 
         :src="product.image" 
         :alt="product.name"
+        @error="handleImgError"
         class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         loading="lazy"
       />

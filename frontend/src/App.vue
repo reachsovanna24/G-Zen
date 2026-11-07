@@ -7,6 +7,7 @@ import { useThemeStore } from './stores/themeStore';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import CartDrawer from './components/CartDrawer.vue';
+import QuickViewModal from './components/QuickViewModal.vue';
 import TelegramButton from './components/TelegramButton.vue';
 
 const route = useRoute();
@@ -40,6 +41,9 @@ onMounted(async () => {
 
     <!-- Customer Cart Drawer -->
     <CartDrawer />
+
+    <!-- Global Quick View Modal -->
+    <QuickViewModal />
 
     <!-- Floating Telegram Support Button -->
     <TelegramButton />

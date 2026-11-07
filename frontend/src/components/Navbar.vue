@@ -88,6 +88,14 @@ const mobileNavItems = computed(() => [
     icon: Heart,
     color: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
     badge: wishlistStore.count > 0 ? wishlistStore.count : null
+  },
+  {
+    name: langStore.t('cart.title'),
+    desc: langStore.isKhmer ? 'កន្ត្រកទំនិញ & ទូទាត់ KHQR' : 'Your Shopping Cart & KHQR Checkout',
+    action: () => { isMobileMenuOpen.value = false; cartStore.openCart(); },
+    icon: ShoppingBag,
+    color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+    badge: cartStore.cartCount > 0 ? cartStore.cartCount : null
   }
 ]);
 
@@ -417,41 +425,72 @@ onUnmounted(() => {
                 {{ langStore.isKhmer ? 'ម៉ឺនុយរុករក' : 'Explore Store' }}
               </div>
 
-              <router-link
-                v-for="item in mobileNavItems"
-                :key="item.path"
-                :to="item.path"
-                @click="isMobileMenuOpen = false"
-                class="flex items-center justify-between p-2.5 rounded-2xl transition-all duration-200 group border"
-                :class="route.path === item.path 
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 font-semibold shadow-sm' 
-                  : 'bg-slate-950/40 hover:bg-slate-800/60 border-slate-800/60 text-slate-200'"
-              >
-                <div class="flex items-center gap-3">
-                  <div 
-                    class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border"
-                    :class="item.color"
-                  >
-                    <component :is="item.icon" class="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div class="text-sm font-bold flex items-center gap-2">
-                      <span>{{ item.name }}</span>
-                      <span 
-                        v-if="item.badge" 
-                        class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white"
-                      >
-                        {{ item.badge }}
-                      </span>
+              <template v-for="item in mobileNavItems" :key="item.name">
+                <!-- Action button (e.g. Your Cart) -->
+                <button
+                  v-if="item.action"
+                  @click="item.action"
+                  class="w-full flex items-center justify-between p-2.5 rounded-2xl transition-all duration-200 group border bg-slate-950/40 hover:bg-slate-800/60 border-slate-800/60 text-slate-200 text-left cursor-pointer"
+                >
+                  <div class="flex items-center gap-3">
+                    <div 
+                      class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border"
+                      :class="item.color"
+                    >
+                      <component :is="item.icon" class="w-4 h-4" />
                     </div>
-                    <div class="text-[11px] text-slate-400">{{ item.desc }}</div>
+                    <div>
+                      <div class="text-sm font-bold flex items-center gap-2">
+                        <span>{{ item.name }}</span>
+                        <span 
+                          v-if="item.badge" 
+                          class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-500 text-slate-950"
+                        >
+                          {{ item.badge }}
+                        </span>
+                      </div>
+                      <div class="text-[11px] text-slate-400">{{ item.desc }}</div>
+                    </div>
                   </div>
-                </div>
-                <ChevronRight 
-                  class="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all"
-                  :class="{ 'text-emerald-400 translate-x-0.5': route.path === item.path }" 
-                />
-              </router-link>
+                  <ChevronRight class="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+                </button>
+
+                <!-- Navigation link -->
+                <router-link
+                  v-else
+                  :to="item.path"
+                  @click="isMobileMenuOpen = false"
+                  class="flex items-center justify-between p-2.5 rounded-2xl transition-all duration-200 group border"
+                  :class="route.path === item.path 
+                    ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 font-semibold shadow-sm' 
+                    : 'bg-slate-950/40 hover:bg-slate-800/60 border-slate-800/60 text-slate-200'"
+                >
+                  <div class="flex items-center gap-3">
+                    <div 
+                      class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border"
+                      :class="item.color"
+                    >
+                      <component :is="item.icon" class="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div class="text-sm font-bold flex items-center gap-2">
+                        <span>{{ item.name }}</span>
+                        <span 
+                          v-if="item.badge" 
+                          class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white"
+                        >
+                          {{ item.badge }}
+                        </span>
+                      </div>
+                      <div class="text-[11px] text-slate-400">{{ item.desc }}</div>
+                    </div>
+                  </div>
+                  <ChevronRight 
+                    class="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all"
+                    :class="{ 'text-emerald-400 translate-x-0.5': route.path === item.path }" 
+                  />
+                </router-link>
+              </template>
             </div>
 
             <!-- Fast Contact & Telegram Direct Link -->

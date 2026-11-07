@@ -23,7 +23,8 @@ const seedProducts = [
     image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
     images: [
       'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&auto=format&fit=crop&q=80'
     ],
     description: 'The ultimate iPhone featuring Grade 5 Titanium design, A18 Pro Bionic chip, 48MP Fusion camera system with 5x Telephoto, and Camera Control button. Official 1-Year Apple warranty in Cambodia.',
     brand: 'Apple',
@@ -48,7 +49,8 @@ const seedProducts = [
     stock: 18,
     image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&auto=format&fit=crop&q=80',
     images: [
-      'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=800&auto=format&fit=crop&q=80'
     ],
     description: 'Experience Galaxy AI 2.0 with Snapdragon 8 Elite for Galaxy, built-in S-Pen, Titanium armor frame, and 200MP quad camera setup. Includes free 45W charger at G-Zen.',
     brand: 'Samsung',
@@ -72,6 +74,10 @@ const seedProducts = [
     originalPrice: 829.00,
     stock: 22,
     image: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Dynamic Island comes to iPhone 15. 48MP main camera with 2x telephoto, USB-C connectivity, and color-infused glass back.',
     brand: 'Apple',
     specs: {
@@ -92,6 +98,10 @@ const seedProducts = [
     originalPrice: 999.00,
     stock: 9,
     image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Engineered by Google with Gemini Nano built-in, Tensor G4 processor, Super Actua display, and pro camera system.',
     brand: 'Google',
     specs: {
@@ -112,6 +122,10 @@ const seedProducts = [
     originalPrice: 1299.00,
     stock: 11,
     image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Impossibly thin at 5.1mm. Breakthrough Ultra Retina XDR tandem OLED display and the monstrous performance of Apple M4 chip with Apple Pencil Pro support.',
     brand: 'Apple',
     specs: {
@@ -133,6 +147,10 @@ const seedProducts = [
     originalPrice: 649.00,
     stock: 16,
     image: 'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Redesigned 11-inch iPad Air supercharged by the Apple M2 chip. Landscape front camera, Liquid Retina display, all-day battery life.',
     brand: 'Apple',
     specs: {
@@ -151,7 +169,11 @@ const seedProducts = [
     price: 999.00,
     originalPrice: 1149.00,
     stock: 8,
-    image: 'https://images.unsplash.com/photo-1585770107532-3671ba98a834?w=800&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1589739900243-4b52cd9b104e?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1589739900243-4b52cd9b104e?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Massive 14.6" Dynamic AMOLED 2X screen with IP68 water & dust resistance, bundled S-Pen, quad AKG speakers, and DeX desktop mode.',
     brand: 'Samsung',
     specs: {
@@ -171,6 +193,10 @@ const seedProducts = [
     originalPrice: 3199.00,
     stock: 5,
     image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'The powerhouse laptop for creators and engineers. M3 Max chip with 14-core CPU, 30-core GPU, Liquid Retina XDR display, and up to 22 hours of battery life.',
     brand: 'Apple',
     specs: {
@@ -192,6 +218,10 @@ const seedProducts = [
     originalPrice: 1349.00,
     stock: 15,
     image: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Incredibly thin and fast. Liquid Retina display, MagSafe 3 charging, dual external monitor support with lid closed, and silent fanless operation.',
     brand: 'Apple',
     specs: {
@@ -212,6 +242,10 @@ const seedProducts = [
     originalPrice: 2399.00,
     stock: 6,
     image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Ultra-slim CNC aluminum gaming laptop with 2.5K OLED 240Hz ROG Nebula Display, Intel Core Ultra 9, and NVIDIA GeForce RTX 4080.',
     brand: 'ASUS',
     specs: {
@@ -232,6 +266,10 @@ const seedProducts = [
     originalPrice: 249.00,
     stock: 35,
     image: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Up to 2x more Active Noise Cancellation, Adaptive Audio, Transparency mode, and USB-C MagSafe charging case with speaker and lanyard loop.',
     brand: 'Apple',
     specs: {
@@ -251,6 +289,10 @@ const seedProducts = [
     originalPrice: 549.00,
     stock: 12,
     image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Rugged titanium cushion frame, sapphire crystal, dual-frequency GPS, multi-sport tracking, and 100-hour battery life.',
     brand: 'Samsung',
     specs: {
@@ -270,6 +312,10 @@ const seedProducts = [
     originalPrice: 79.00,
     stock: 40,
     image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Fast charge 3 devices simultaneously with 2 USB-C and 1 USB-A ports. Powered by GaNPrime technology with ActiveShield 2.0 safety.',
     brand: 'Anker',
     specs: {
@@ -288,7 +334,11 @@ const seedProducts = [
     price: 59.00,
     originalPrice: 69.00,
     stock: 28,
-    image: 'https://images.unsplash.com/photo-1609592424109-dd9892f1b177?w=800&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=800&auto=format&fit=crop&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&auto=format&fit=crop&q=80'
+    ],
     description: 'Only 18mm thin! Charges laptops and phones at up to 100W fast charging. Digital real-time power display screen.',
     brand: 'Baseus',
     specs: {

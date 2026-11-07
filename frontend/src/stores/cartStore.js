@@ -105,6 +105,10 @@ export const useCartStore = defineStore('cart', {
       this.isCartOpen = false;
     },
 
+    toggleCart() {
+      this.isCartOpen = !this.isCartOpen;
+    },
+
     setDistrict(district) {
       this.selectedDistrict = district;
     },

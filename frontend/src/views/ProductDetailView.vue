@@ -31,6 +31,10 @@ const loading = ref(true);
 const quantity = ref(1);
 const activeImage = ref('');
 
+const handleImageError = (e) => {
+  e.target.src = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80';
+};
+
 onMounted(async () => {
   try {
     const id = route.params.id;
@@ -85,11 +89,12 @@ const categoryLabel = computed(() => {
     <div v-else-if="product" class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
       <!-- Left: Image Gallery -->
       <div class="lg:col-span-6 space-y-4">
-        <div class="rounded-2xl sm:rounded-3xl glass-panel p-4 sm:p-8 flex items-center justify-center bg-slate-950/70 border border-slate-800">
+        <div class="rounded-2xl sm:rounded-3xl glass-panel p-4 sm:p-8 flex items-center justify-center bg-slate-900/40 border border-slate-800 min-h-[320px] sm:min-h-[420px] relative overflow-hidden group">
           <img 
-            :src="activeImage" 
+            :src="activeImage || product.image" 
             :alt="product.name" 
-            class="max-h-64 sm:max-h-96 object-contain"
+            @error="handleImageError"
+            class="max-h-64 sm:max-h-96 w-auto object-contain transition-all duration-300 transform group-hover:scale-105"
           />
         </div>
 
@@ -99,10 +104,10 @@ const categoryLabel = computed(() => {
             v-for="(img, idx) in product.images" 
             :key="idx"
             @click="activeImage = img"
-            class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all p-1 bg-slate-900 shrink-0"
-            :class="activeImage === img ? 'border-emerald-500 scale-105' : 'border-slate-800 opacity-60 hover:opacity-100'"
+            class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all p-1 bg-slate-900 shrink-0 cursor-pointer"
+            :class="activeImage === img ? 'border-emerald-500 scale-105 ring-2 ring-emerald-500/20' : 'border-slate-800 opacity-60 hover:opacity-100 hover:border-slate-700'"
           >
-            <img :src="img" class="w-full h-full object-cover rounded-lg" />
+            <img :src="img" @error="handleImageError" class="w-full h-full object-cover rounded-lg" />
           </button>
         </div>
       </div>
