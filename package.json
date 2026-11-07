@@ -1,0 +1,15 @@
+{
+  "name": "g-zen-phone-store-monorepo",
+  "version": "1.0.0",
+  "description": "G-Zen Phone Store - Full Stack Vue 3 + Node.js E-Commerce Application",
+  "scripts": {
+    "dev": "npm run start:all",
+    "start:all": "node scripts/start-both.js",
+    "dev:backend": "npm --prefix backend run start",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build"
+  },
+  "keywords": ["vue3", "nodejs", "express", "sqlite", "khqr", "phnompenh"],
+  "author": "G-Zen Tech",
+  "license": "MIT"
+}

@@ -1,0 +1,628 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Khmer Typography Optimization */
+  :lang(km) {
+    font-family: 'Kantumruy Pro', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    letter-spacing: 0.01em;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #090d16;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 shadow-xl transition-all duration-300;
+  }
+  
+  .glass-card-hover {
+    @apply hover:border-emerald-500/40 hover:shadow-glow hover:-translate-y-1;
+  }
+
+  .glass-panel {
+    @apply bg-slate-900/90 backdrop-blur-2xl border border-slate-800 shadow-2xl;
+  }
+
+  .badge-khqr {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-950/60 text-red-400 border border-red-800/50;
+  }
+
+  .badge-aba {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-950/60 text-blue-400 border border-blue-800/50;
+  }
+}
+
+/* Animations */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================================
+   CLEAN & PROFESSIONAL BRIGHT THEME
+   Only active when html has class 'theme-light'
+   ============================================================ */
+html.theme-light {
+  color-scheme: light;
+}
+
+/* Base Body & Layouts */
+html.theme-light body {
+  background-color: #f8fafc !important; /* Soft studio canvas */
+  color: #1e293b !important; /* Slate 800 - crisp, easy on the eyes */
+  background-image: none !important;
+}
+
+html.theme-light .min-h-screen,
+html.theme-light main {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+/* Custom scrollbars in Light Mode */
+html.theme-light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+html.theme-light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+html.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Cards & Panels: Pure White with Refined Borders */
+html.theme-light .glass-panel {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+}
+
+html.theme-light .glass-card {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
+}
+
+html.theme-light .glass-card:hover,
+html.theme-light .glass-card-hover:hover {
+  border-color: #10b981 !important;
+  box-shadow: 0 14px 28px -6px rgba(16, 185, 129, 0.14), 0 0 0 1px rgba(16, 185, 129, 0.25) !important;
+}
+
+/* Header & Navbar */
+html.theme-light header {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 10px -2px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* G-ZEN Brand Logo: Crisp Obsidian Gradient */
+html.theme-light header .bg-gradient-to-r.from-white {
+  background-image: linear-gradient(to right, #0f172a, #1e293b, #334155) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}
+
+/* Announcement Top Bar */
+html.theme-light .bg-gradient-to-r.from-emerald-950,
+html.theme-light .bg-emerald-950\/90 {
+  background: linear-gradient(90deg, #ecfdf5, #f0fdf4, #ecfdf5) !important;
+  border-color: #a7f3d0 !important;
+  color: #065f46 !important;
+}
+
+html.theme-light .bg-gradient-to-r.from-emerald-950 span,
+html.theme-light .bg-emerald-950\/90 span {
+  color: #065f46 !important;
+}
+
+html.theme-light .bg-gradient-to-r.from-emerald-950 .bg-emerald-500\/20,
+html.theme-light .bg-emerald-950\/90 .bg-emerald-500\/20 {
+  background-color: #d1fae5 !important;
+  color: #047857 !important;
+}
+
+/* Navbar Navigation Links */
+html.theme-light nav a.text-slate-300,
+html.theme-light nav button.text-slate-300 {
+  color: #334155 !important;
+}
+
+html.theme-light nav a.text-slate-300:hover,
+html.theme-light nav button.text-slate-300:hover {
+  color: #0f172a !important;
+  background-color: #f1f5f9 !important;
+}
+
+/* Active Nav Link Pill */
+html.theme-light nav a.text-emerald-400.bg-emerald-950\/40 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #047857 !important;
+  font-weight: 700 !important;
+}
+
+/* Navbar Icon Buttons (Cart, Wishlist) */
+html.theme-light header button.bg-slate-900\/90,
+html.theme-light header button.bg-slate-900 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+html.theme-light header button.bg-slate-900\/90:hover,
+html.theme-light header button.bg-slate-900:hover {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* Navbar Sign In / Register Buttons */
+html.theme-light header a.text-slate-300 {
+  color: #334155 !important;
+}
+html.theme-light header a.text-slate-300:hover {
+  color: #0f172a !important;
+  background-color: #f1f5f9 !important;
+}
+
+/* Typography Hierarchy */
+html.theme-light h1,
+html.theme-light h2,
+html.theme-light h3,
+html.theme-light h4,
+html.theme-light h5,
+html.theme-light h6 {
+  color: #0f172a !important;
+}
+
+/* Text Colors */
+html.theme-light .text-slate-100 {
+  color: #0f172a !important;
+}
+
+html.theme-light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html.theme-light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.theme-light .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.theme-light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* White text: turn dark on neutral surfaces, but KEEP pure white on colored badges/buttons */
+html.theme-light .text-white {
+  color: #0f172a !important;
+}
+
+/* PRESERVE WHITE TEXT ON COLORED / ACTION SURFACES */
+html.theme-light .bg-red-500 .text-white,
+html.theme-light .bg-red-600 .text-white,
+html.theme-light button.bg-red-500,
+html.theme-light button.bg-red-600,
+html.theme-light span.bg-red-500,
+html.theme-light span.bg-red-500 .text-white,
+html.theme-light .bg-blue-600 .text-white,
+html.theme-light .bg-indigo-600 .text-white,
+html.theme-light .bg-sky-500,
+html.theme-light .bg-sky-500 *,
+html.theme-light .keep-white,
+html.theme-light .keep-white * {
+  color: #ffffff !important;
+}
+
+/* Primary Action Buttons (Emerald) */
+html.theme-light .bg-emerald-500,
+html.theme-light button.bg-emerald-500,
+html.theme-light a.bg-emerald-500 {
+  background-color: #10b981 !important;
+  color: #022c22 !important; /* Deep emerald obsidian - supreme contrast on bright emerald */
+  font-weight: 700 !important;
+}
+
+html.theme-light .bg-emerald-500:hover,
+html.theme-light button.bg-emerald-500:hover,
+html.theme-light a.bg-emerald-500:hover {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+/* Elements inside emerald buttons should inherit contrasting text */
+html.theme-light .bg-emerald-500 span,
+html.theme-light button.bg-emerald-500 span,
+html.theme-light a.bg-emerald-500 span {
+  color: inherit !important;
+}
+
+/* Secondary Buttons */
+html.theme-light button.bg-slate-900,
+html.theme-light a.bg-slate-900,
+html.theme-light button.bg-slate-800,
+html.theme-light a.bg-slate-800 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+html.theme-light button.bg-slate-900:hover,
+html.theme-light a.bg-slate-900:hover,
+html.theme-light button.bg-slate-800:hover,
+html.theme-light a.bg-slate-800:hover {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* Background surfaces */
+html.theme-light .bg-slate-950 {
+  background-color: #ffffff !important;
+}
+
+html.theme-light .bg-slate-950\/60,
+html.theme-light .bg-slate-950\/70,
+html.theme-light .bg-slate-950\/80,
+html.theme-light .bg-slate-950\/90 {
+  background-color: #ffffff !important;
+}
+
+html.theme-light .bg-slate-900 {
+  background-color: #f8fafc !important;
+}
+
+html.theme-light .bg-slate-900\/60,
+html.theme-light .bg-slate-900\/70,
+html.theme-light .bg-slate-900\/80,
+html.theme-light .bg-slate-900\/90 {
+  background-color: #ffffff !important;
+}
+
+html.theme-light .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Border Overrides */
+html.theme-light .border-slate-800,
+html.theme-light .border-slate-800\/60,
+html.theme-light .border-slate-800\/80,
+html.theme-light .border-slate-700,
+html.theme-light .border-slate-700\/60,
+html.theme-light .border-slate-700\/80 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Hero Section: Clean, Professional, Balanced */
+html.theme-light section.bg-gradient-to-b {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light .bg-gradient-to-r.from-emerald-400.via-teal-300.to-cyan-400 {
+  background-image: linear-gradient(to right, #059669, #0d9488, #0284c7) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}
+
+/* Hero Right Showcase Card */
+html.theme-light .lg\:col-span-5 .bg-gradient-to-b.from-emerald-500\/40 {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08) !important;
+}
+
+html.theme-light .lg\:col-span-5 .rounded-\[22px\].bg-slate-950 {
+  background: #f8fafc !important;
+}
+
+/* Form Controls & Inputs */
+html.theme-light input,
+html.theme-light select,
+html.theme-light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1.5px solid #cbd5e1 !important;
+}
+
+html.theme-light input:focus,
+html.theme-light select:focus,
+html.theme-light textarea:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+}
+
+html.theme-light input::placeholder,
+html.theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Product Card Elements in Light Theme */
+html.theme-light .product-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light .product-card .bg-slate-950 {
+  background: radial-gradient(circle at 50% 50%, #ffffff 0%, #f8fafc 70%, #f1f5f9 100%) !important;
+}
+
+html.theme-light .product-card h3 {
+  color: #0f172a !important;
+}
+
+html.theme-light .product-card:hover h3 {
+  color: #059669 !important;
+}
+
+/* Heart Favorite Button on Image */
+html.theme-light .product-card button.bg-slate-900\/70 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+html.theme-light .product-card button.bg-slate-900\/70:hover {
+  background-color: #ffffff !important;
+  color: #ef4444 !important;
+}
+
+/* Bottom Favorite Button in Product Card */
+html.theme-light .product-card button.bg-slate-800 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+html.theme-light .product-card button.bg-slate-800:hover {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #ef4444 !important;
+}
+
+/* Badges: Clean, High Contrast */
+html.theme-light .badge-khqr {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+  border-color: #fecaca !important;
+}
+
+html.theme-light .badge-aba {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+  border-color: #bfdbfe !important;
+}
+
+html.theme-light .bg-emerald-950\/80,
+html.theme-light .bg-emerald-950\/60,
+html.theme-light .bg-emerald-950\/40,
+html.theme-light .bg-emerald-500\/10,
+html.theme-light .bg-emerald-500\/20 {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+}
+
+html.theme-light .bg-amber-950,
+html.theme-light .bg-amber-950\/80,
+html.theme-light .bg-amber-500\/10,
+html.theme-light .bg-amber-500\/20 {
+  background-color: #fffbeb !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+}
+
+html.theme-light .bg-red-950,
+html.theme-light .bg-red-950\/80,
+html.theme-light .bg-red-950\/30,
+html.theme-light .bg-red-500\/10,
+html.theme-light .bg-red-500\/20 {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+  border-color: #fecaca !important;
+}
+
+html.theme-light .bg-blue-950,
+html.theme-light .bg-blue-950\/80,
+html.theme-light .bg-blue-950\/30,
+html.theme-light .bg-blue-500\/10,
+html.theme-light .bg-blue-500\/20 {
+  background-color: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #bfdbfe !important;
+}
+
+/* Red Discount Badge (-20%) */
+html.theme-light span.bg-red-500,
+html.theme-light span.bg-red-500 * {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* Stock status pill on images */
+html.theme-light .product-card .bg-slate-900\/80 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Category Filter Tabs (Shop View) */
+html.theme-light .glass-panel button.bg-slate-900 {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+html.theme-light .glass-panel button.bg-slate-900:hover {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Footer: Clean, Crisp, Professional */
+html.theme-light footer {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+html.theme-light footer .bg-slate-900\/60 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light footer a {
+  color: #475569 !important;
+}
+
+html.theme-light footer a:hover {
+  color: #059669 !important;
+}
+
+/* Cart Drawer */
+html.theme-light .fixed .bg-slate-900 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light .fixed .bg-slate-950\/60,
+html.theme-light .fixed .bg-slate-950\/70 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Quantity Adjuster Boxes */
+html.theme-light .flex.items-center.border.border-slate-700.rounded-lg.bg-slate-900,
+html.theme-light .flex.items-center.border.border-slate-700.rounded-xl.bg-slate-950 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.theme-light .flex.items-center.border.border-slate-700.rounded-lg.bg-slate-900 button,
+html.theme-light .flex.items-center.border.border-slate-700.rounded-xl.bg-slate-950 button {
+  color: #64748b !important;
+}
+
+html.theme-light .flex.items-center.border.border-slate-700.rounded-lg.bg-slate-900 button:hover,
+html.theme-light .flex.items-center.border.border-slate-700.rounded-xl.bg-slate-950 button:hover {
+  color: #0f172a !important;
+  background-color: #f1f5f9 !important;
+}
+
+/* Service Booking Tabs */
+html.theme-light .bg-slate-950.rounded-2xl.border.border-slate-800 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light .bg-slate-950.rounded-2xl.border.border-slate-800 button.text-slate-400 {
+  color: #475569 !important;
+}
+
+html.theme-light .bg-slate-950.rounded-2xl.border.border-slate-800 button.text-slate-400:hover {
+  color: #0f172a !important;
+}
+
+/* Admin Hub in Light Mode */
+html.theme-light aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light aside a.text-slate-400,
+html.theme-light aside button.text-slate-400 {
+  color: #475569 !important;
+}
+
+html.theme-light aside a.text-slate-400:hover,
+html.theme-light aside button.text-slate-400:hover {
+  color: #0f172a !important;
+  background-color: #f1f5f9 !important;
+}
+
+html.theme-light table {
+  background-color: #ffffff !important;
+}
+
+html.theme-light thead th {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light tbody tr {
+  border-color: #f1f5f9 !important;
+}
+
+html.theme-light tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Modals & Backdrop */
+html.theme-light .fixed.inset-0.bg-slate-950\/80,
+html.theme-light .fixed.inset-0.bg-slate-950\/85,
+html.theme-light .fixed.inset-0.bg-slate-950\/70,
+html.theme-light .fixed.inset-0.bg-slate-950\/75,
+html.theme-light .mobile-drawer-backdrop {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Mobile Slide-in Drawer in Light Mode */
+html.theme-light .mobile-drawer-panel {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: -10px 0 30px -5px rgba(0, 0, 0, 0.12), -4px 0 12px -2px rgba(0, 0, 0, 0.08) !important;
+}
+
+html.theme-light .mobile-drawer-panel .bg-slate-950,
+html.theme-light .mobile-drawer-panel .bg-slate-950\/80,
+html.theme-light .mobile-drawer-panel .bg-slate-950\/40 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light .mobile-drawer-panel .bg-slate-900,
+html.theme-light .mobile-drawer-panel .bg-slate-900\/90 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+
